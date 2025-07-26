@@ -1,0 +1,8 @@
+# Google OAuth credentials and tokens
+credentials.json
+google_services/token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

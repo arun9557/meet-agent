@@ -1,68 +1,83 @@
 import os
-from langchain.chains.summarize import load_summarize_chain
-from langchain_openai import ChatOpenAI
-from langchain.docstore.document import Document
-from langchain.chains.question_answering import load_qa_chain
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from openai import OpenAI
 
 # You will need to set your OpenAI API key as an environment variable
 # export OPENAI_API_KEY="..."
 
 def generate_summary(transcript):
     """
-    Generates a summary of the meeting transcript using LangChain and an LLM.
+    Generates a summary of the meeting transcript using OpenAI's API.
     """
     if not os.getenv("OPENAI_API_KEY"):
         return "Error: OPENAI_API_KEY not set. Please set it as an environment variable."
 
-    print("Generating meeting summary with LangChain...")
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    print("Generating meeting summary...")
+    client = OpenAI()
     
-    docs = [Document(page_content=transcript)]
-    chain = load_summarize_chain(llm, chain_type="stuff")
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that summarizes meeting transcripts."},
+            {"role": "user", "content": f"Summarize the following meeting transcript:\n\n{transcript}"}
+        ],
+        temperature=0
+    )
 
-    summary = chain.run(docs)
+    summary = response.choices[0].message.content
     return summary
 
 def extract_key_takeaways(transcript):
     """
-    Extracts key takeaways from the meeting transcript using LangChain.
+    Extracts key takeaways from the meeting transcript using OpenAI's API.
     """
     if not os.getenv("OPENAI_API_KEY"):
         return "Error: OPENAI_API_KEY not set."
 
-    print("Extracting key takeaways with LangChain...")
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    print("Extracting key takeaways...")
+    client = OpenAI()
 
-    prompt_template = """
-    You are an AI assistant tasked with identifying key takeaways from a meeting transcript.
-    Focus on decisions made, action items assigned, and important conclusions.
-    
-    Transcript:
-    {transcript}
-    
-    Key Takeaways:
-    """
-    
-    prompt = PromptTemplate(template=prompt_template, input_variables=["transcript"])
-    chain = LLMChain(llm=llm, prompt=prompt)
-    
-    takeaways = chain.run(transcript=transcript)
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI assistant tasked with identifying key takeaways from meeting transcripts. Focus on decisions made, action items assigned, and important conclusions."
+            },
+            {
+                "role": "user",
+                "content": f"Identify the key takeaways from this meeting transcript:\n\n{transcript}"
+            }
+        ],
+        temperature=0
+    )
+
+    takeaways = response.choices[0].message.content
     return takeaways
 
 def answer_question(transcript, question):
     """
-    Answers a question based on the meeting transcript using LangChain.
+    Answers a question based on the meeting transcript using OpenAI's API.
     """
     if not os.getenv("OPENAI_API_KEY"):
         return "Error: OPENAI_API_KEY not set. Please set it as an environment variable."
 
-    print(f"Answering question with LangChain: {question}")
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    print(f"Answering question: {question}")
+    client = OpenAI()
     
-    docs = [Document(page_content=transcript)]
-    chain = load_qa_chain(llm, chain_type="stuff")
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that answers questions about meeting transcripts."
+            },
+            {
+                "role": "user",
+                "content": f"Use the following meeting transcript to answer the question.\n\nTranscript:\n{transcript}\n\nQuestion: {question}"
+            }
+        ],
+        temperature=0
+    )
     
-    answer = chain.run(input_documents=docs, question=question)
-    return answer 
+    answer = response.choices[0].message.content
+    return answer
